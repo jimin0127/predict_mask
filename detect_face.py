@@ -3,7 +3,7 @@ import cvlib as cv
 
 # open webcam (웹캠 열기)
 webcam = cv2.VideoCapture(0)
-#capture = cv2.VideoCapture('sample.mp4')
+# capture = cv2.VideoCapture('sample.mp4')
 # 너비 : 640
 webcam.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 # 높이 : 480
