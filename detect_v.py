@@ -29,11 +29,13 @@ def removeFaceAra(img):
 
 
 def make_mask_image(img_bgr):
+    #Hue(색상), Saturation(채도), Value(진하기)
     img_hsv = cv.cvtColor(img_bgr, cv.COLOR_BGR2HSV)
 
-    low = (0, 30, 0)
-    high = (15, 255, 255)
+    low = (0, 30, 0) # 노랑
+    high = (15, 255, 255) # 청록
 
+    # 범위 안에 들어가면 검은색 0, 들어가지 않으면 1 -> 흑백 사진으로, 살색을 추출하기 위해
     img_mask = cv.inRange(img_hsv, low, high)
     return img_mask
 
@@ -49,6 +51,7 @@ def calculateAngle(A, B):
     # 거리 계산(벡터 끼리의 연산)
     A_norm = np.linalg.norm(A)
     B_norm = np.linalg.norm(B)
+    # 행렬 곱
     C = np.dot(A, B)
 
     # 각도 계산
@@ -61,16 +64,21 @@ def findMaxArea(contours):
     max_area = -1
 
     for contour in contours:
+        # contour의 윤곽영역 면적구하기
         area = cv.contourArea(contour)
 
+        # contour로 직사각형의 모양을 그림, 직사각형의 4면을 리턴
         x, y, w, h = cv.boundingRect(contour)
 
+        # ??????
         if (w * h) * 0.4 > area:
             continue
 
+        # 손의 방향을 지정, 세로 X, 기로 O
         if w > h:
             continue
 
+        # 최대 면적 윤곽 구하기, 얼굴은 이미 제외 되어 있음
         if area > max_area:
             max_area = area
             max_contour = contour
@@ -87,23 +95,31 @@ def getFingerPosition(max_contour, img_result, debug):
     # STEP 6-1
     M = cv.moments(max_contour)
 
+    # Contour의 중심값(무게중심)을 찾기
     cx = int(M['m10'] / M['m00'])
     cy = int(M['m01'] / M['m00'])
 
+    # 0.02 * cv.arcLength(max_contour, True)만큼 꼭짓점의 개수를 줄여 새로운 곡선을 리턴
     max_contour = cv.approxPolyDP(max_contour, 0.02 * cv.arcLength(max_contour, True), True)
+
+    # 블록껍질(경계면을 둘러싸는 다각형을 구하는 알고리즘) : 스크랜스키 -> 볼록한 외관을 찾는다.
     hull = cv.convexHull(max_contour)
 
     for point in hull:
-        if cy > point[0][1]:
-            points1.append(tuple(point[0]))
+        if cy > point[0][1]: # ?????
+            points1.append(tuple(point[0])) # 손가락 위치 추가
 
     if debug:
         cv.drawContours(img_result, [hull], 0, (0, 255, 0), 2)
+        # 손가락의 위치 그리기
         for point in points1:
+            # 이미지, 원의 중심 좌표, 원의 반지름, 색상, 선의 두께
             cv.circle(img_result, tuple(point), 15, [0, 0, 0], -1)
 
     # STEP 6-2
+    # max_contour의 외곽 경계선을 찾아 손가락 꼭짓점을 찾는다.
     hull = cv.convexHull(max_contour, returnPoints=False)
+    # max_contour 손바닥의 윤곽선과 손가락의 윤곽선을 비교하여 오목하게 들어간 부분을 찾는다.
     defects = cv.convexityDefects(max_contour, hull)
 
     if defects is None:
@@ -115,9 +131,10 @@ def getFingerPosition(max_contour, img_result, debug):
         start = tuple(max_contour[s][0])
         end = tuple(max_contour[e][0])
         far = tuple(max_contour[f][0])
-
+        # 손가락이 이루는 꼭짓점의 각도를 구한다.
         angle = calculateAngle(np.array(start) - np.array(far), np.array(end) - np.array(far))
 
+        # 손가락이 이루는 각도가 90가 이하면
         if angle < 90:
             if start[1] < cy:
                 points2.append(start)
@@ -188,6 +205,7 @@ def getFingerPosition(max_contour, img_result, debug):
 
 
 def process(img, debug):
+    real_img = img.copy()
     img_result = img.copy()
 
     # STEP 1
@@ -199,7 +217,7 @@ def process(img, debug):
     # STEP 3
     # 타원형 터널
     kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
-    # 작은 구멍이나 검은 검을 없앤다
+    # 작은 구멍이나 검은 점을 없앤다(kernel로 채우는 것)
     img_binary = cv.morphologyEx(img_binary, cv.MORPH_CLOSE, kernel, 1)
     cv.imshow("Binary", img_binary)
 
@@ -214,7 +232,7 @@ def process(img, debug):
             # 가장 자리를 그림
             cv.drawContours(img_result, [cnt], 0, (255, 0, 0), 3)
 
-            # STEP 5
+    # STEP 5
     max_area, max_contour = findMaxArea(contours)
 
     if max_area == -1:
@@ -223,20 +241,23 @@ def process(img, debug):
     if debug:
         cv.drawContours(img_result, [max_contour], 0, (0, 0, 255), 3)
 
-        # STEP 6
+    # STEP 6
     ret, points = getFingerPosition(max_contour, img_result, debug)
 
+    global sample_p
     # STEP 7
     if ret > 0 and len(points) > 0:
         if len(points) == 2:
-            #timer_start()
-            # 타이머
-            print('2')
+            print(2)
+            sample_p += 1
+        if sample_p == 20:
+            cv.imwrite('v1.jpg', real_img)
         for point in points:
             cv.circle(img_result, point, 20, [255, 0, 255], 5)
 
     return img_result
 
+sample_p = 0
 
 # cap = cv.VideoCapture('test.avi')
 
