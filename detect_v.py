@@ -10,6 +10,7 @@ import threading
 # 코드 수정
 # 타이머 구현
 
+
 def detect(img):
     face, confidence = cvlib.detect_face(img)
 
@@ -23,7 +24,7 @@ def removeFaceAra(img):
     faces = detect(img)
 
     for x1, y1, x2, y2 in faces:
-        cv.rectangle(img, (x1 - 10, y1), (x2 + 10, y2), (0, 0, 0), -1)
+        cv.rectangle(img, (x1 - 10, y1), (x2 + 20, y2+50), (0, 0, 0), -1)
 
     return img
 
@@ -187,22 +188,7 @@ def getFingerPosition(max_contour, img_result, debug):
                 new_points.append(p0)
 
     return 1, new_points
-
-# time_count = 3
-
-# def timer_start():
-#     global time_count
-#     print(time_count)
-#     time_count -= 1
-#
-#     timer = threading.Timer(1, print(time_count))
-#     timer.start()
-#
-#     if time_count == 0:
-#         timer.cancel()
-#         ret, v_image = cap.read()
-#         cv.imwrite('v.jpg', v_image)
-
+flag = True
 
 def process(img, debug):
     real_img = img.copy()
@@ -244,24 +230,49 @@ def process(img, debug):
     # STEP 6
     ret, points = getFingerPosition(max_contour, img_result, debug)
 
+
     global sample_p
+    global flag
+
     # STEP 7
     if ret > 0 and len(points) > 0:
-        if len(points) == 2:
+        if len(points) == 2 or len(points) == 1:
             print(2)
             sample_p += 1
-        if sample_p == 20:
-            cv.imwrite('v1.jpg', real_img)
+        else:
+            sample_p = 0
+
+        if sample_p >= 20:
+            file = 'count_down_img/countDown3.png'
+            if sample_p >= 100:
+                if flag == True:
+                    cv.imwrite('v.jpg', real_img)
+                    flag = False
+                return img_result
+            elif sample_p >= 80:
+                file = 'count_down_img/countDown1.png'
+            elif sample_p >= 50:
+                file = 'count_down_img/countDown2.png'
+            width = real_img.shape[1]
+            height = real_img.shape[0]
+            count = cv.imread(file)
+            count = cv.resize(count, (width, height))
+            img_result = cv.addWeighted(img_result, 0.5, count, 1.0, 0)
+
         for point in points:
             cv.circle(img_result, point, 20, [255, 0, 255], 5)
+
 
     return img_result
 
 sample_p = 0
 
-# cap = cv.VideoCapture('test.avi')
-
 cap = cv.VideoCapture(0)
+cap.set(cv.CAP_PROP_FRAME_WIDTH, 640)
+# 높이 : 480
+cap.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
+
+
 
 while True:
 
