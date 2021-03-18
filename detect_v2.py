@@ -153,6 +153,7 @@ def getFingerPosition(max_contour, img_result, debug):
 
 def process(img_bgr, img_binary, debug):
     img_result = img_bgr.copy()
+    real_img = img_bgr.copy()
 
     # # STEP 1
     #img_bgr = removeFaceAra(img_bgr)
@@ -185,8 +186,34 @@ def process(img_bgr, img_binary, debug):
         # STEP 6
     ret, points = getFingerPosition(max_contour, img_result, debug)
 
+    global sample_p
+    global flag
     # STEP 7
     if ret > 0 and len(points) > 0:
+        if len(points) == 2 or len(points) == 1:
+            print(2)
+            sample_p += 1
+        else:
+            sample_p = 0
+
+        if sample_p >= 20:
+            file = 'count_down_img/countDown3.png'
+            if sample_p >= 100:
+                if flag == True:
+                    cv.imwrite('v.jpg', real_img)
+                    flag = False
+                return img_result
+            elif sample_p >= 80:
+                file = 'count_down_img/countDown1.png'
+            elif sample_p >= 50:
+                file = 'count_down_img/countDown2.png'
+            width = real_img.shape[1]
+            height = real_img.shape[0]
+            count = cv.imread(file)
+            count = cv.resize(count, (width, height))
+            img_result = cv.addWeighted(img_result, 0.5, count, 1.0, 0)
+
+
         for point in points:
             cv.circle(img_result, point, 20, [255, 0, 255], 5)
 
@@ -195,9 +222,11 @@ def process(img_bgr, img_binary, debug):
 cap = cv.VideoCapture(0)
 
 #  http://layer0.authentise.com/segment-background-using-computer-vision.html
-fgbg = cv.createBackgroundSubtractorMOG2(varThreshold=200, detectShadows=0)
+fgbg = cv.createBackgroundSubtractorMOG2(varThreshold=200, detectShadows=False)
 
 index = 0
+sample_p = 0
+flag = True
 
 while (1):
     index = index + 1
@@ -213,7 +242,7 @@ while (1):
 
     fgmask = fgbg.apply(blur, learningRate=0)
 
-    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2, 2))
     fgmask = cv.morphologyEx(fgmask, cv.MORPH_CLOSE, kernel, 2)
 
     height, width = frame.shape[:2]
