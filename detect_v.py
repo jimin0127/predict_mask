@@ -247,7 +247,8 @@ def process(img, debug):
             if sample_p >= 100:
                 if flag == True:
                     cv.imwrite('v.jpg', real_img)
-                    flag = False
+                    #flag = False
+                    sample_p = 0
                 return img_result
             elif sample_p >= 80:
                 file = 'count_down_img/countDown1.png'
@@ -277,6 +278,7 @@ cap.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
 while True:
 
     ret, img_bgr = cap.read()
+    camera = img_bgr.copy()
 
     if ret == False:
         break
@@ -287,7 +289,7 @@ while True:
     key = cv.waitKey(1)
     if key == 27:
         break
-
+    cv.imshow('camera', camera)
 
     cv.imshow("Result", img_result)
 
