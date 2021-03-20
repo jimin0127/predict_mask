@@ -14,7 +14,10 @@ path_dir2 = 'img/mask/'
 file_list1 = os.listdir(path_dir1)
 file_list2 = os.listdir(path_dir2)
 
-file_num = len(file_list1) + len(file_list2)
+file_list1_num = len(file_list1)
+file_list2_num = len(file_list2)
+
+file_num = file_list1_num + file_list2_num
 
 # 이미지 전처리
 num = 0
@@ -32,6 +35,18 @@ for img_name in file_list1:
 
     all_label[num] = 0  # nomask
     num = num+1
+
+for img_name in file_list2:
+    img_path = path_dir2+img_name
+    img = load_img(img_path, target_size=(224, 224))
+
+    x = img_to_array(img)
+    x = np.expand_dims(x, axis = 0)
+    x = preprocess_input(x)
+    all_img[num, :, :, :] = x
+
+    all_label[num] = 1 #mask
+    num = num + 1
 
 
 # 적절하게 훈련되게 하기 위해 데이터 셋 섞기
