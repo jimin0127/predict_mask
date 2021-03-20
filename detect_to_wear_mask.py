@@ -38,11 +38,11 @@ while webcam.isOpened():
 
         if 0 <= startX <= frame.shape[1] and 0 <= endX <= frame.shape[1] and 0 <= startY <= frame.shape[0] and 0 <= endY <= frame.shape[0]:
 
-            face_region1 = frame[startY:endY, startX:endX]
+            face_region = frame[startY:endY, startX:endX]
 
-            face_region2 = cv2.resize(face_region1, (224, 224), interpolation = cv2.INTER_AREA)
+            face_region1 = cv2.resize(face_region, (224, 224), interpolation = cv2.INTER_AREA)
 
-            x = img_to_array(face_region2)
+            x = img_to_array(face_region1)
             x = np.expand_dims(x, axis=0)
             x=preprocess_input(x)
 
@@ -50,10 +50,10 @@ while webcam.isOpened():
 
             # 마스크 미착용으로 판별된다면
             if prediction < 0.5:
-                cv2.rectangle((frame), (startX, startY), (endX, endY), (0, 0, 255), 2)
+                cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255), 2)
                 Y = startY - 10 if startY - 10 > 10 else startY + 10
                 text = "No Mask(({:.2f}%)".format((1 - prediction[0][0])*100)
-                cv2.putText(frame, text, (startX, Y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255))
+                cv2.putText(frame, text, (startX, Y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
             # 마스크 착용으로 판별된다면
             else:
@@ -71,5 +71,5 @@ while webcam.isOpened():
 #release resources
 webcam.release()
 cv2.destroyAllWindows()
-
+q
 
