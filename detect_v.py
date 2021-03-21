@@ -33,8 +33,10 @@ def make_mask_image(img_bgr):
     #Hue(색상), Saturation(채도), Value(진하기)
     img_hsv = cv.cvtColor(img_bgr, cv.COLOR_BGR2HSV)
 
-    low = (0, 30, 0) # 노랑
-    high = (15, 255, 255) # 청록
+    #low = (0, 30, 0) # 청록
+    #low = (0, 75, 150) # 갈색
+    low = (0, 40, 80) # 갈색
+    high = (15, 255, 255) # 노랑
 
     # 범위 안에 들어가면 검은색 0, 들어가지 않으면 1 -> 흑백 사진으로, 살색을 추출하기 위해
     img_mask = cv.inRange(img_hsv, low, high)
