@@ -1,6 +1,5 @@
-#import detect_to_wear_mask
 from detect_v import detect_v
-#from detect_to_wear_mask import detect_to_wear_mask
+from detect_to_wear_mask import detect_to_wear_mask
 
 class mask:
     def __init__(self):
@@ -9,7 +8,8 @@ class mask:
 
 
     def d_mask(self):
-        self.mask = detect_to_wear_mask()
+        m = detect_to_wear_mask()
+        self.mask = m.test()
 
         if self.mask == 1:
             #어쩌구저쩌구 말하고
