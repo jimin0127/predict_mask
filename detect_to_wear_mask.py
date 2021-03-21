@@ -71,5 +71,5 @@ while webcam.isOpened():
 #release resources
 webcam.release()
 cv2.destroyAllWindows()
-q
+
 
