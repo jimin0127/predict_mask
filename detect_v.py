@@ -1,7 +1,7 @@
-import cv2 as cv
+import cv2
 import numpy as np
 import os
-import cvlib
+import cvlib as cv
 import threading
 
 # 변경 사항 : 얼굴 인식을 cvlib.detect_face로 변경하여 얼굴 인식 정확도를 높임
@@ -12,7 +12,7 @@ import threading
 
 
 def detect(img):
-    face, confidence = cvlib.detect_face(img)
+    face, confidence = cv.detect_face(img)
 
     if len(face) == 0:
         return []
@@ -24,14 +24,14 @@ def removeFaceAra(img):
     faces = detect(img)
 
     for x1, y1, x2, y2 in faces:
-        cv.rectangle(img, (x1 - 10, y1), (x2 + 20, y2+50), (0, 0, 0), -1)
+        cv2.rectangle(img, (x1 - 10, y1), (x2 + 20, y2+50), (0, 0, 0), -1)
 
     return img
 
 
 def make_mask_image(img_bgr):
     #Hue(색상), Saturation(채도), Value(진하기)
-    img_hsv = cv.cvtColor(img_bgr, cv.COLOR_BGR2HSV)
+    img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
 
     #low = (0, 30, 0) # 청록
     #low = (0, 75, 150) # 갈색
@@ -39,7 +39,7 @@ def make_mask_image(img_bgr):
     high = (15, 255, 255) # 노랑
 
     # 범위 안에 들어가면 검은색 0, 들어가지 않으면 1 -> 흑백 사진으로, 살색을 추출하기 위해
-    img_mask = cv.inRange(img_hsv, low, high)
+    img_mask = cv2.inRange(img_hsv, low, high)
     return img_mask
 
 
@@ -68,10 +68,10 @@ def findMaxArea(contours):
 
     for contour in contours:
         # contour의 윤곽영역 면적구하기
-        area = cv.contourArea(contour)
+        area = cv2.contourArea(contour)
 
         # contour로 직사각형의 모양을 그림, 직사각형의 4면을 리턴
-        x, y, w, h = cv.boundingRect(contour)
+        x, y, w, h = cv2.boundingRect(contour)
 
         # ??????
         if (w * h) * 0.4 > area:
@@ -96,34 +96,34 @@ def getFingerPosition(max_contour, img_result, debug):
     points1 = []
 
     # STEP 6-1
-    M = cv.moments(max_contour)
+    M = cv2.moments(max_contour)
 
     # Contour의 중심값(무게중심)을 찾기
     cx = int(M['m10'] / M['m00'])
     cy = int(M['m01'] / M['m00'])
 
-    # 0.02 * cv.arcLength(max_contour, True)만큼 꼭짓점의 개수를 줄여 새로운 곡선을 리턴
-    max_contour = cv.approxPolyDP(max_contour, 0.02 * cv.arcLength(max_contour, True), True)
+    # 0.02 * cv2.arcLength(max_contour, True)만큼 꼭짓점의 개수를 줄여 새로운 곡선을 리턴
+    max_contour = cv2.approxPolyDP(max_contour, 0.02 * cv2.arcLength(max_contour, True), True)
 
     # 블록껍질(경계면을 둘러싸는 다각형을 구하는 알고리즘) : 스크랜스키 -> 볼록한 외관을 찾는다.
-    hull = cv.convexHull(max_contour)
+    hull = cv2.convexHull(max_contour)
 
     for point in hull:
         if cy > point[0][1]: # ?????
             points1.append(tuple(point[0])) # 손가락 위치 추가
 
     if debug:
-        cv.drawContours(img_result, [hull], 0, (0, 255, 0), 2)
+        cv2.drawContours(img_result, [hull], 0, (0, 255, 0), 2)
         # 손가락의 위치 그리기
         for point in points1:
             # 이미지, 원의 중심 좌표, 원의 반지름, 색상, 선의 두께
-            cv.circle(img_result, tuple(point), 15, [0, 0, 0], -1)
+            cv2.circle(img_result, tuple(point), 15, [0, 0, 0], -1)
 
     # STEP 6-2
     # max_contour의 외곽 경계선을 찾아 손가락 꼭짓점을 찾는다.
-    hull = cv.convexHull(max_contour, returnPoints=False)
+    hull = cv2.convexHull(max_contour, returnPoints=False)
     # max_contour 손바닥의 윤곽선과 손가락의 윤곽선을 비교하여 오목하게 들어간 부분을 찾는다.
-    defects = cv.convexityDefects(max_contour, hull)
+    defects = cv2.convexityDefects(max_contour, hull)
 
     if defects is None:
         return -1, None
@@ -146,9 +146,9 @@ def getFingerPosition(max_contour, img_result, debug):
                 points2.append(end)
 
     if debug:
-        cv.drawContours(img_result, [max_contour], 0, (255, 0, 255), 2)
+        cv2.drawContours(img_result, [max_contour], 0, (255, 0, 255), 2)
         for point in points2:
-            cv.circle(img_result, tuple(point), 20, [0, 255, 0], 5)
+            cv2.circle(img_result, tuple(point), 20, [0, 255, 0], 5)
 
     # STEP 6-3
     points = points1 + points2
@@ -204,21 +204,21 @@ def process(img, debug):
 
     # STEP 3
     # 타원형 터널
-    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
     # 작은 구멍이나 검은 점을 없앤다(kernel로 채우는 것)
-    img_binary = cv.morphologyEx(img_binary, cv.MORPH_CLOSE, kernel, 1)
-    cv.imshow("Binary", img_binary)
+    img_binary = cv2.morphologyEx(img_binary, cv2.MORPH_CLOSE, kernel, 1)
+    cv2.imshow("Binary", img_binary)
 
     # STEP 4
     # contours : 동일한 색 또는 동일한 색상 강도를 가진 가장 자리를 연결한 선
     # RETR_EXTERNAL : 이미지의 가장 바깥쪽의 contours만 추출
     # CHAIN_APPROX_SIMPLE : 모든 점을 저장하지 않고 끝점만 저장
-    contours, hierarchy = cv.findContours(img_binary, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(img_binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     if debug:
         for cnt in contours:
             # 가장 자리를 그림
-            cv.drawContours(img_result, [cnt], 0, (255, 0, 0), 3)
+            cv2.drawContours(img_result, [cnt], 0, (255, 0, 0), 3)
 
     # STEP 5
     max_area, max_contour = findMaxArea(contours)
@@ -227,7 +227,7 @@ def process(img, debug):
         return img_result
 
     if debug:
-        cv.drawContours(img_result, [max_contour], 0, (0, 0, 255), 3)
+        cv2.drawContours(img_result, [max_contour], 0, (0, 0, 255), 3)
 
     # STEP 6
     ret, points = getFingerPosition(max_contour, img_result, debug)
@@ -248,7 +248,7 @@ def process(img, debug):
             file = 'count_down_img/countDown3.png'
             if sample_p >= 100:
                 if flag == True:
-                    cv.imwrite('v.jpg', real_img)
+                    cv2.imwrite('v.jpg', real_img)
                     #flag = False
                     sample_p = 0
                 return img_result
@@ -258,22 +258,22 @@ def process(img, debug):
                 file = 'count_down_img/countDown2.png'
             width = real_img.shape[1]
             height = real_img.shape[0]
-            count = cv.imread(file)
-            count = cv.resize(count, (width, height))
-            img_result = cv.addWeighted(img_result, 0.5, count, 1.0, 0)
+            count = cv2.imread(file)
+            count = cv2.resize(count, (width, height))
+            img_result = cv2.addWeighted(img_result, 0.5, count, 1.0, 0)
 
         for point in points:
-            cv.circle(img_result, point, 20, [255, 0, 255], 5)
+            cv2.circle(img_result, point, 20, [255, 0, 255], 5)
 
 
     return img_result
 
 sample_p = 0
 
-cap = cv.VideoCapture(0)
-cap.set(cv.CAP_PROP_FRAME_WIDTH, 640)
+cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 # 높이 : 480
-cap.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 
 
@@ -288,12 +288,12 @@ while True:
 
     img_result = process(img_bgr, debug=False)
 
-    key = cv.waitKey(1)
+    key = cv2.waitKey(1)
     if key == 27:
         break
-    cv.imshow('camera', camera)
+    cv2.imshow('camera', camera)
 
-    cv.imshow("Result", img_result)
+    cv2.imshow("Result", img_result)
 
 cap.release()
-cv.destroyAllWindows()
+cv2.destroyAllWindows()

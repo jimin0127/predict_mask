@@ -8,68 +8,82 @@ from tensorflow.keras.applications.resnet50 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
 from PIL import ImageFont, ImageDraw, Image
 
-model = load_model('model.h5')
-model.summary()
 
-# 웹캠 열기
-webcam = cv2.VideoCapture(0)
+class detect_to_wear_mask():
+    def __init__(self):
+        self.model = load_model('model.h5')
+        self.model.summary()
 
-if not webcam.isOpened():
-    print("Could not open webcam")
-    exit()
+    def test(self):
 
-while webcam.isOpened():
+        a = 0
+        # 웹캠 열기
+        cam = cv2.VideoCapture(0)
 
-    # 웹캠에서 프레임 읽어오기
-    status, frame = webcam.read()
+        if not cam.isOpened():
+            print("Could not open webcam")
+            exit()
 
-    if not status:
-        print("Could not read frame")
-        exit()
+        while cam.isOpened():
 
-    # 얼굴 감지하기
-    face, confidence = cv.detect_face(frame)
+            # 웹캠에서 프레임 읽어오기
+            status, frame = cam.read()
 
-    # 감지된 얼굴만큼 반복하기
-    for idx, f in enumerate(face):
+            if not status:
+                print("Could not read frame")
+                exit()
 
-        (startX, startY) = f[0], f[1]
-        (endX, endY) = f[2], f[3]
+            # 얼굴 감지하기
+            face, confidence = cv.detect_face(frame)
 
-        if 0 <= startX <= frame.shape[1] and 0 <= endX <= frame.shape[1] and 0 <= startY <= frame.shape[0] and 0 <= endY <= frame.shape[0]:
+            # 감지된 얼굴만큼 반복하기
+            for idx, f in enumerate(face):
 
-            face_region = frame[startY:endY, startX:endX]
+                (startX, startY) = f[0], f[1]
+                (endX, endY) = f[2], f[3]
 
-            face_region1 = cv2.resize(face_region, (224, 224), interpolation = cv2.INTER_AREA)
+                if 0 <= startX <= frame.shape[1] and 0 <= endX <= frame.shape[1] and 0 <= startY <= frame.shape[0] and 0 <= endY <= frame.shape[0]:
 
-            x = img_to_array(face_region1)
-            x = np.expand_dims(x, axis=0)
-            x=preprocess_input(x)
+                    face_region = frame[startY:endY, startX:endX]
 
-            prediction = model.predict(x)
+                    face_region1 = cv2.resize(face_region, (224, 224), interpolation = cv2.INTER_AREA)
 
-            # 마스크 미착용으로 판별된다면
-            if prediction < 0.5:
-                cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255), 2)
-                Y = startY - 10 if startY - 10 > 10 else startY + 10
-                text = "No Mask(({:.2f}%)".format((1 - prediction[0][0])*100)
-                cv2.putText(frame, text, (startX, Y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                    x = img_to_array(face_region1)
+                    x = np.expand_dims(x, axis=0)
+                    x=preprocess_input(x)
 
-            # 마스크 착용으로 판별된다면
-            else:
-                cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-                Y = startY - 10 if startY - 10 > 10 else startY + 10
-                text = "Mask ({:.2f}%)".format(prediction[0][0]*100)
-                cv2.putText(frame, text, (startX, Y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                    prediction = self.model.predict(x)
 
-        # display output
-        cv2.imshow("mask nomask classify", frame)
+                    # 마스크 미착용으로 판별된다면
+                    if prediction < 0.5:
+                        cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255), 2)
+                        Y = startY - 10 if startY - 10 > 10 else startY + 10
+                        text = "No Mask(({:.2f}%)".format((1 - prediction[0][0])*100)
+                        cv2.putText(frame, text, (startX, Y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
-        # press "Q" to stop
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-#release resources
-webcam.release()
-cv2.destroyAllWindows()
-q
 
+                    # 마스크 착용으로 판별된다면(1)
+                    else:
+                        cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
+                        Y = startY - 10 if startY - 10 > 10 else startY + 10
+                        text = "Mask ({:.2f}%)".format(prediction[0][0]*100)
+                        cv2.putText(frame, text, (startX, Y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        a += 1
+
+            if a == 6:
+                return 1
+
+            # display output
+            cv2.imshow("mask nomask classify", frame)
+
+            # press "Q" to stop
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        # release resources
+        cam.release()
+        cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    d = detect_to_wear_mask()
+    print(d.test())
