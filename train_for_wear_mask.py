@@ -21,16 +21,17 @@ file_num = file_list1_num + file_list2_num
 
 # 이미지 전처리
 num = 0
-all_img = np.float32(np.zeros((file_num, 224, 224, 3)))
+all_img = np.float32(np.zeros((file_num, 224, 224, 3))) # 크기가 정해져 있고 모든 값이 0인 배열
 all_label = np.float64(np.zeros((file_num, 1)))
 
+# nomask 안에 사진 하나씩 꺼내오기
 for img_name in file_list1:
     img_path = path_dir1+img_name
-    img = load_img(img_path, target_size=(224, 224))
+    img = load_img(img_path, target_size=(224, 224)) # 이미지를 224,224 픽셀 크기로 불러오기
 
-    x = img_to_array(img)
-    x = np.expand_dims(x, axis = 0)
-    x = preprocess_input(x)
+    x = img_to_array(img) # img_to_array 함수를 씌우면 이미지를 NumPy 배열로 변환
+    x = np.expand_dims(x, axis = 0) # 배열 (array)에 차원을 추가하기
+    x = preprocess_input(x) # 모델에 필요한 형식에 이미지를 적절하게 맞추기 위함 (samples, size1,size2,channels)로 만들기
     all_img[num, :, :, :] = x
 
     all_label[num] = 0  # nomask
@@ -95,19 +96,10 @@ model.compile(optimizer=tf.keras.optimizers.Adam(lr=base_learning_rate),
               metrics=['accuracy'])
 model.summary()
 
+# 모델 학습시키기
 model.fit(train_img, train_label, epochs=10, batch_size=16, validation_data=(test_img, test_label))
 
 # 모델 저장하기
 model.save("model.h5")
 
-print("Saved model to disk")  
-
-
-
-
-
-
-
-
-
-
+print("Saved model to disk")
