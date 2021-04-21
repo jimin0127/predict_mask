@@ -3,6 +3,8 @@ import numpy as np
 import os
 import cvlib as cv
 import threading
+import time
+#import client1
 
 # 변경 사항 : 얼굴 인식을 cvlib.detect_face로 변경하여 얼굴 인식 정확도를 높임
 # 검게 변하는 영역을 얼굴 영역으로 줄임
@@ -10,7 +12,16 @@ import threading
 # 코드 수정
 # 타이머 구현
 
+class Timer(threading.Thread):
+    def __init__(self):
+        self.count = 3
+
+    def run(self):
+        self.count += 1
+        time.sleep(1)
+
 class detect_v:
+
     def detect(self, img):
         face, confidence = cv.detect_face(img)
         if len(face) == 0:
@@ -34,9 +45,9 @@ class detect_v:
         img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
 
 
-        #low = (0, 30, 0) # 청록
+        low = (0, 30, 0) # 청록
         #low = (0, 75, 150) # 갈색
-        low = (0, 40, 80) # 갈색
+        #low = (0, 40, 80) # 갈색
         high = (15, 255, 255) # 노랑
         # 범위 안에 들어가면 검은색 0, 들어가지 않으면 1 -> 흑백 사진으로, 살색을 추출하기 위해
         img_mask = cv2.inRange(img_hsv, low, high)
@@ -195,6 +206,9 @@ class detect_v:
 
         return 1, new_points
 
+
+
+
     def process(self, img, debug):
 
         real_img = img.copy()
@@ -238,35 +252,44 @@ class detect_v:
 
         # STEP 6
         ret, points = self.getFingerPosition(max_contour, img_result, debug)
-
         # STEP 7
         if ret > 0 and len(points) > 0:
             if len(points) == 2 or len(points) == 1:
                 print(2)
                 self.sample_p += 1
-            else:
-                self.sample_p = 0
+            #else:
+                #self.sample_p = 0
+        if self.sample_p >= 20:
+            self.flag = True
+            if self.flag == True:
+                Timer.start()
 
-            if self.sample_p >= 20:
-                file = 'count_down_img/countDown3.png'
-                if self.sample_p >= 100:
-                    if self.flag == True:
-                        cv2.imwrite('v.jpg', real_img)
-                        #flag = False
-                        self.sample_p = 0
-                    return img_result
-                elif self.sample_p >= 80:
-                    file = 'count_down_img/countDown1.png'
-                elif self.sample_p >= 50:
-                    file = 'count_down_img/countDown2.png'
-                width = real_img.shape[1]
-                height = real_img.shape[0]
-                count = cv2.imread(file)
-                count = cv2.resize(count, (width, height))
-                img_result = cv2.addWeighted(img_result, 0.5, count, 1.0, 0)
+#         print(self.flag)
+#         if self.flag:
+#             self.sample_p += 1
+#             if self.sample_p >= 20:
+#                 print(self.sample_p)
+#
+#                 file = 'count_down_img/countDown3.png'
+#                 if self.sample_p >= 100:
+#                     cv2.imwrite('v.jpg', real_img)
+# #                        client1.sendPircture(real_img)
+#                     cv2.destroyAllWindows()
+#                     #flag = False
+#                     self.sample_p = 0
+#                     return img_result
+#                 elif self.sample_p >= 80:
+#                     file = 'count_down_img/countDown1.png'
+#                 elif self.sample_p >= 50:
+#                     file = 'count_down_img/countDown2.png'
+#                 width = real_img.shape[1]
+#                 height = real_img.shape[0]
+#                 count = cv2.imread(file)
+#                 count = cv2.resize(count, (width, height))
+#                 img_result = cv2.addWeighted(img_result, 0.5, count, 1.0, 0)
 
-            for point in points:
-                cv2.circle(img_result, point, 20, [255, 0, 255], 5)
+        for point in points:
+            cv2.circle(img_result, point, 20, [255, 0, 255], 5)
 
 
         return img_result
@@ -274,7 +297,7 @@ class detect_v:
 
     def test(self):
         self.sample_p = 0
-        self.flag = True
+        self.flag = False
 
         cap = cv2.VideoCapture(0)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -305,3 +328,6 @@ class detect_v:
         cap.release()
         cv2.destroyAllWindows()
 
+if __name__ == '__main__':
+    d = detect_v()
+    d.test()

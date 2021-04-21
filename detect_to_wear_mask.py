@@ -34,6 +34,8 @@ class detect_to_wear_mask():
                 exit()
 
             # 얼굴 감지하기
+            # 얼굴의 좌표들과 예측된 얼굴 각각의 confidence
+            # 예측된 얼굴 좌표는 (xmin, ymin, xmax, ymax) 순으로 반환
             face, confidence = cv.detect_face(frame)
 
             # 감지된 얼굴만큼 반복하기
@@ -56,9 +58,11 @@ class detect_to_wear_mask():
 
                     # 마스크 미착용으로 판별된다면
                     if prediction < 0.5:
+                        # 얼굴 위치 box 그리기
                         cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255), 2)
                         Y = startY - 10 if startY - 10 > 10 else startY + 10
                         text = "No Mask(({:.2f}%)".format((1 - prediction[0][0])*100)
+                        # 확률 출력하기
                         cv2.putText(frame, text, (startX, Y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
                     # 마스크 착용으로 판별된다면(1)
@@ -69,8 +73,8 @@ class detect_to_wear_mask():
                         cv2.putText(frame, text, (startX, Y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
                         a += 1
 
-            if a == 6:
-                return 1
+            # if a == 6:
+            #     return 1
 
             # display output
             cv2.imshow("mask nomask classify", frame)
